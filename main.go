@@ -18,13 +18,16 @@ var reGH = regexp.MustCompile("https://github.com/(.*)/(.*).git")
 func main() {
 	flag.Bool("help", false, "Show usage.")
 
-	ref := flag.String("ref", "", "Branch to check out. Default current branch.")
-	sha := flag.String("sha", "", "SHA to reset to. Default current SHA.")
-	url := flag.String("url", "", "Canonical repo URL. Default https://github.com/owner/repo.git remote.")
-
 	hub := flag.Bool("hub", false, "Interact with GitHub API. Must be set for -user and -pass to have effect.")
 	user := flag.String("user", "", "Auth username. Default 'git credential' username for -url.")
 	pass := flag.String("pass", "", "Auth password. Default 'git credential' password for -url.")
+
+	bref := flag.String("bref", "", "Base branch. Default master.")
+	bsha := flag.String("bsha", "", "Base SHA. Default SHA of master/HEAD.")
+	ref := flag.String("ref", "", "Branch to check out. Default current branch.")
+	sha := flag.String("sha", "", "SHA to reset to. Default SHA of current HEAD.")
+
+	url := flag.String("url", "", "Canonical repo URL. Default https://github.com/owner/repo.git remote.")
 
 	flag.Usage = func() {
 		fmt.Printf("usage: %s [options] [<directory>]\n", os.Args[0])
@@ -66,6 +69,8 @@ func main() {
 	args := []string{"run",
 		"-e", "USER",
 		"-e", "PASS",
+		"-e", "BREF",
+		"-e", "BSHA",
 		"-e", "REF",
 		"-e", "SHA",
 		"-e", "URL",
@@ -87,6 +92,18 @@ func main() {
 			panic(err)
 		}
 		*sha = strings.TrimSpace(string(out))
+	}
+
+	if *bref == "" {
+		*bref = "master"
+	}
+
+	if *bsha == "" {
+		out, err := exec.Command("git", "rev-parse", *bref).Output()
+		if err != nil {
+			panic(err)
+		}
+		*bsha = strings.TrimSpace(string(out))
 	}
 
 	// infer a github.com repo URL
@@ -149,13 +166,15 @@ func main() {
 		}
 	}
 
-	fmt.Printf("DIR:  %s\nUSER: %s\nPASS: %s\nREF:  %s\nSHA:  %s\nURL:  %s\n\n", dir, duser, dpass, *ref, *sha, *url)
+	fmt.Printf("DIR:  %s\nUSER: %s\nPASS: %s\nBREF: %s\nBSHA: %s\nREF:  %s\nSHA:  %s\nURL:  %s\n\n", dir, duser, dpass, *bref, *bsha, *ref, *sha, *url)
 
 	args = append(args, "mixable/bios", "handler.Handle")
 	cmd := exec.Command("docker", args...)
 	cmd.Env = []string{
 		fmt.Sprintf("USER=%s", *user),
 		fmt.Sprintf("PASS=%s", *pass),
+		fmt.Sprintf("BREF=%s", *bref),
+		fmt.Sprintf("BSHA=%s", *bsha),
 		fmt.Sprintf("REF=%s", *ref),
 		fmt.Sprintf("SHA=%s", *sha),
 		fmt.Sprintf("URL=%s", *url),

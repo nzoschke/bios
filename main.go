@@ -5,28 +5,74 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	neturl "net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
-func main() {
-	flag.Bool("help", false, "show usage")
-	ref := flag.String("ref", "", "branch to check out")
-	sha := flag.String("sha", "", "SHA to set status for")
-	url := flag.String("url", "", "repo to clone")
+var reGH = regexp.MustCompile("https://github.com/(.*)/(.*).git")
 
-	user := flag.String("user", "", "auth username")
-	pass := flag.String("pass", "", "auth password")
+func main() {
+	flag.Bool("help", false, "Show usage.")
+
+	ref := flag.String("ref", "", "Branch to check out. Default current branch.")
+	sha := flag.String("sha", "", "SHA to reset to. Default current SHA.")
+	url := flag.String("url", "", "Canonical repo URL. Default https://github.com/owner/repo.git remote.")
+
+	hub := flag.Bool("hub", false, "Interact with GitHub API. Must be set for -user and -pass to have effect.")
+	user := flag.String("user", "", "Auth username. Default 'git credential' username for -url.")
+	pass := flag.String("pass", "", "Auth password. Default 'git credential' password for -url.")
 
 	flag.Usage = func() {
-		fmt.Printf("usage: %s [options] [path-to-script]\n", os.Args[0])
+		fmt.Printf("usage: %s [options] [<directory>]\n", os.Args[0])
 		flag.PrintDefaults()
 	}
 
 	flag.Parse()
 
+	// find path to local .git directory
+	dir := "."
+	if len(flag.Args()) == 1 {
+		dir = flag.Args()[0]
+	}
+
+	dir, err := filepath.Abs(dir)
+	if err != nil {
+		panic(err)
+	}
+
+	ok, err := existsLocal(dir)
+	if err != nil {
+		panic(err)
+	}
+	if !ok {
+		fmt.Printf("ERROR: %s does not exist\n", dir)
+		os.Exit(1)
+	}
+
+	ok, err = existsLocal(dir + "/.git")
+	if err != nil {
+		panic(err)
+	}
+	if !ok {
+		fmt.Printf("ERROR: %s does not appear to be a git repo\n", dir)
+		os.Exit(1)
+	}
+
+	// build up Docker args
+	args := []string{"run",
+		"-e", "USER",
+		"-e", "PASS",
+		"-e", "REF",
+		"-e", "SHA",
+		"-e", "URL",
+		"-v", fmt.Sprintf("%s:%s", dir, "/tmp/repo"),
+	}
+
+	// infer empty args
 	if *ref == "" {
 		out, err := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD").Output()
 		if err != nil {
@@ -43,17 +89,30 @@ func main() {
 		*sha = strings.TrimSpace(string(out))
 	}
 
+	// infer a github.com repo URL
 	if *url == "" {
-		out, err := exec.Command("git", "ls-remote", "--get-url", "origin").Output()
+		out, err := exec.Command("git", "remote", "-v").Output()
 		if err != nil {
 			panic(err)
 		}
-		*url = strings.TrimSpace(string(out))
+		if m := reGH.FindString(string(out)); m != "" {
+			*url = m
+		}
+	}
+	if *url == "" {
+		fmt.Printf("ERROR: No https://github.com/owner/repo.git remote found\n")
+		os.Exit(1)
 	}
 
-	if *pass == "" {
+	// infer credentials
+	if *hub && (*pass == "" || *user == "") {
+		u, err := neturl.Parse(*url)
+		if err != nil {
+			panic(err)
+		}
+
 		cmd := exec.Command("git", "credential", "fill")
-		cmd.Stdin = strings.NewReader("protocol=https\nhost=github.com\n")
+		cmd.Stdin = strings.NewReader(fmt.Sprintf("protocol=%s\nhost=%s\n", u.Scheme, u.Host))
 		out, err := cmd.Output()
 		if err != nil {
 			panic(err)
@@ -66,23 +125,31 @@ func main() {
 			info[parts[0]] = parts[1]
 		}
 
-		*pass = info["password"]
-		*user = info["username"]
-	}
-
-	args := []string{"run", "-e", "USER", "-e", "PASS", "-e", "REF", "-e", "SHA", "-e", "URL"}
-
-	var err error
-	script := "bios.sh"
-	if len(flag.Args()) == 1 {
-		script, err = filepath.Abs(flag.Args()[0])
-		if err != nil {
-			panic(err)
+		if *pass == "" {
+			*pass = info["password"]
 		}
-		args = append(args, "-v", fmt.Sprintf("%s:%s", script, "/tmp/bios.sh"))
+
+		if *user == "" {
+			*user = info["username"]
+		}
 	}
 
-	fmt.Printf("Ref: %s\nSHA: %s\nURL: %s\nsh : %s\n", *ref, *sha, *url, script)
+	dpass := "<secret>"
+	duser := *user
+
+	if !*hub {
+		// discard arguments
+		dpass = "<disabled>"
+		duser = "<disabled>"
+		*pass = ""
+		*user = ""
+	} else {
+		if *pass == "" {
+			dpass = "<empty>"
+		}
+	}
+
+	fmt.Printf("DIR:  %s\nUSER: %s\nPASS: %s\nREF:  %s\nSHA:  %s\nURL:  %s\n\n", dir, duser, dpass, *ref, *sha, *url)
 
 	args = append(args, "mixable/bios", "handler.Handle")
 	cmd := exec.Command("docker", args...)
@@ -102,5 +169,21 @@ func main() {
 	}
 
 	err = cmd.Wait()
-	fmt.Printf("ERR: %+v\n", err)
+	if err != nil {
+		fmt.Printf("ERROR: %+v\n", err)
+		os.Exit(1)
+	}
+	os.Exit(0)
+}
+
+func existsLocal(p string) (bool, error) {
+	_, err := os.Stat(p)
+	if err == nil {
+		return true, nil
+	}
+
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
 }

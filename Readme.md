@@ -4,7 +4,7 @@ bios is a utility for running a `bios.sh` script on your laptop. It uses the [mi
 
 
 ```console
-$ go install github.com/nzoschke/bios
+$ go get -u github.com/nzoschke/bios
 
 $ bios -h
 usage: bios [options] [<directory>]
@@ -18,39 +18,56 @@ usage: bios [options] [<directory>]
   -user string
         Auth username. Default 'git credential' username for -url.
 
+  -bref string
+        Base branch. Default master.
+  -bsha string
+        Base SHA. Default SHA of master/HEAD.
   -ref string
         Branch to check out. Default current branch.
   -sha string
-        SHA to reset to. Default current SHA.
+        SHA to reset to. Default SHA of current branch.
+
   -url string
         Canonical repo URL. Default https://github.com/owner/repo.git remote.
 
+## Check out a repo with `bios.sh` and give it a try!
+$ git clone https://github.com/nzoschke/bios.git && cd bios
 $ bios
-DIR:  /Users/noah/go/src/github.com/nzoschke/bios
+DIR:  /tmp/bios
 USER: <disabled>
 PASS: <disabled>
-REF:  local
-SHA:  8a4c62642ae54da63f9bd7b7124d0e487427bcc5
+BREF: master
+BSHA: 203e2f2aec1e3c46a38219ba9075860a5f99a031
+REF:  master
+SHA:  203e2f2aec1e3c46a38219ba9075860a5f99a031
 URL:  https://github.com/nzoschke/bios.git
 
-000:0 $ run -s Cloning git clone file:///tmp/repo/.git --branch local --single-branch .
-000:3 $ run -s Linting golint -set_exit_status github.com/nzoschke/bios
-000:3 $ run -s Vetting go vet -x github.com/nzoschke/bios
-000:4 $ run -s Building go build -v github.com/nzoschke/bios
-000:8 $ run -s Testing go test -v github.com/nzoschke/bios
+000:0 $ run -s Cloning   git clone file:///tmp/repo/.git --branch master --single-branch src/github.com/nzoschke/bios
+000:4 $ run -s Resetting git reset --hard 203e2f2aec1e3c46a38219ba9075860a5f99a031
+000:4 $ run -s Fetching  git fetch origin master
+000:6 $ run -s Linting   golint -set_exit_status github.com/nzoschke/bios
+000:6 $ run -s Vetting   go vet -x github.com/nzoschke/bios
+000:7 $ run -s Building  go build -v github.com/nzoschke/bios
+001:0 $ run -s Testing   go test -v github.com/nzoschke/bios
 
 # Results
 
-Succeeded in 1.1 seconds. 🆗
+Succeeded in 1.4 seconds. 🆗
 
 ## Statuses
 
 ```diff
 + Cloning
++ Resetting
++ Fetching
++ Whitespacing
 + Linting
 + Vetting
 + Building
 + Testing
+```
+
+Succeeded (Testing)
 ```
 
 ## GitHub Interactions

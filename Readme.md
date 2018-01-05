@@ -1,34 +1,12 @@
 # bios
 
-bios is a utility for running a `bios.sh` script on your laptop. It uses the [mixable/bios Docker image](https://hub.docker.com/r/mixable/bios/) to run in an environment very similar to the [BIOS GitHub App](https://www.mixable.net/docs/bios/).
+`bios` is a utility for running a `bios.sh` script on your laptop. It uses the [mixable/bios Docker image](https://hub.docker.com/r/mixable/bios/) to run in an environment very similar to the [BIOS GitHub App](https://www.mixable.net/docs/bios/) which uses AWS Lambda.
 
+Example:
 
 ```console
+## Install bios CLI
 $ go get -u github.com/nzoschke/bios
-
-$ bios -h
-usage: bios [options] [<directory>]
-  -help
-        Show usage.
-
-  -hub
-        Interact with GitHub API. Must be set for -user and -pass to have effect.
-  -pass string
-        Auth password. Default 'git credential' password for -url.
-  -user string
-        Auth username. Default 'git credential' username for -url.
-
-  -bref string
-        Base branch. Default master.
-  -bsha string
-        Base SHA. Default SHA of master/HEAD.
-  -ref string
-        Branch to check out. Default current branch.
-  -sha string
-        SHA to reset to. Default SHA of current branch.
-
-  -url string
-        Canonical repo URL. Default https://github.com/owner/repo.git remote.
 
 ## Check out a repo with `bios.sh` and give it a try!
 $ git clone https://github.com/nzoschke/bios.git && cd bios
@@ -56,7 +34,7 @@ Succeeded in 1.4 seconds. 🆗
 
 ## Statuses
 
-```diff
+``diff
 + Cloning
 + Resetting
 + Fetching
@@ -65,7 +43,7 @@ Succeeded in 1.4 seconds. 🆗
 + Vetting
 + Building
 + Testing
-```
+``
 
 Succeeded (Testing)
 ```

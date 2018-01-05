@@ -9,21 +9,21 @@ $ go install github.com/nzoschke/bios
 $ bios -h
 usage: bios [options] [<directory>]
   -help
-    	Show usage.
+        Show usage.
 
   -hub
-    	Interact with GitHub API. Must be set for -user and -pass to have effect.
+        Interact with GitHub API. Must be set for -user and -pass to have effect.
   -pass string
-    	Auth password. Default 'git credential' password for -url.
+        Auth password. Default 'git credential' password for -url.
   -user string
-    	Auth username. Default 'git credential' username for -url.
+        Auth username. Default 'git credential' username for -url.
 
   -ref string
-    	Branch to check out. Default current branch.
+        Branch to check out. Default current branch.
   -sha string
-    	SHA to reset to. Default current SHA.
+        SHA to reset to. Default current SHA.
   -url string
-    	Canonical repo URL. Default https://github.com/owner/repo.git remote.
+        Canonical repo URL. Default https://github.com/owner/repo.git remote.
 
 $ bios
 DIR:  /Users/noah/go/src/github.com/nzoschke/bios

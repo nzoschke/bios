@@ -1,6 +1,5 @@
 #!/bin/bash
 set -ex -o pipefail
-env | grep -v PASS=
 
 export GIT_DIR=src/$PKG/.git
 run -s "Cloning"      git clone $URL --branch $REF --single-branch src/$PKG

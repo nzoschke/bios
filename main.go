@@ -25,7 +25,7 @@ func main() {
 	bref := flag.String("bref", "", "Base branch. Default master.")
 	bsha := flag.String("bsha", "", "Base SHA. Default SHA of master/HEAD.")
 	ref := flag.String("ref", "", "Branch to check out. Default current branch.")
-	sha := flag.String("sha", "", "SHA to reset to. Default SHA of current HEAD.")
+	sha := flag.String("sha", "", "SHA to reset to. Default SHA of current branch.")
 
 	url := flag.String("url", "", "Canonical repo URL. Default https://github.com/owner/repo.git remote.")
 

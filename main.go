@@ -168,7 +168,7 @@ func main() {
 
 	fmt.Printf("DIR:  %s\nUSER: %s\nPASS: %s\nBREF: %s\nBSHA: %s\nREF:  %s\nSHA:  %s\nURL:  %s\n\n", dir, duser, dpass, *bref, *bsha, *ref, *sha, *url)
 
-	args = append(args, "mixable/bios", "handler.Handle")
+	args = append(args, "mixable/bios", "runner")
 	cmd := exec.Command("docker", args...)
 	cmd.Env = []string{
 		fmt.Sprintf("USER=%s", *user),
